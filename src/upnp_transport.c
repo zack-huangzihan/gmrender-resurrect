@@ -499,11 +499,13 @@ static void replace_current_uri_and_meta(const char *uri, const char *meta){
 }
 
 static void change_transport_state(enum transport_state new_state) {
+	printf("rockchip debug: change_transport_state in \n");
 	transport_state_ = new_state;
 	assert(new_state >= TRANSPORT_STOPPED
 	       && new_state < TRANSPORT_NO_MEDIA_PRESENT);
 	if (!replace_var(TRANSPORT_VAR_TRANSPORT_STATE,
 			 transport_states[new_state])) {
+		printf("rockchip debug: change_transport_state replace_var is fail\n");
 		return;  // no change.
 	}
 	const char *available_actions = NULL;
@@ -516,9 +518,11 @@ static void change_transport_state(enum transport_state new_state) {
 		}
 		break;
 	case TRANSPORT_PLAYING:
+		printf("rockchip debug: change_transport_state in : TRANSPORT_PLAYING\n");
 		available_actions = "PAUSE,STOP,SEEK";
 		break;
 	case TRANSPORT_PAUSED_PLAYBACK:
+		printf("rockchip debug: change_transport_state in : TRANSPORT_PAUSED_PLAYBACK\n");
 		available_actions = "PLAY,STOP,SEEK";
 		break;
 	case TRANSPORT_TRANSITIONING:
@@ -552,11 +556,14 @@ static void update_meta_from_stream(const struct SongMetaData *meta) {
 
 static int set_avtransport_uri(struct action_event *event)
 {
+	printf("rockchip debug: set_avtransport_uri in\n\n");
 	if (!has_instance_id(event)) {
+		printf("rockchip debug: set_avtransport_uri in has_instance_id = 0\n\n");
 		return -1;
 	}
 	const char *uri = upnp_get_string(event, "CurrentURI");
 	if (uri == NULL) {
+		printf("rockchip debug: set_avtransport_uri in upnp_get_string is NULL\n\n");
 		return -1;
 	}
 
@@ -564,8 +571,8 @@ static int set_avtransport_uri(struct action_event *event)
 	const char *meta = upnp_get_string(event, "CurrentURIMetaData");
 	// Transport URI/Meta set now, current URI/Meta when it starts playing.
 	int requires_meta_update = replace_transport_uri_and_meta(uri, meta);
-
 	if (transport_state_ == TRANSPORT_PLAYING) {
+		printf("rockchip debug: set_avtransport_uri in: transport_state_ == TRANSPORT_PLAYING\n\n");
 		// Uh, wrong state.
 		// Usually, this should not be called while we are PLAYING, only
 		// STOPPED or PAUSED. But if actually some controller sets this
@@ -729,6 +736,7 @@ static int get_device_caps(struct action_event *event)
 
 static int stop(struct action_event *event)
 {
+	printf("rockchip debug: stop in\n");
 	if (!has_instance_id(event)) {
 		return -1;
 	}
@@ -744,6 +752,7 @@ static int stop(struct action_event *event)
 	case TRANSPORT_RECORDING:
 	case TRANSPORT_PAUSED_PLAYBACK:
 		output_stop();
+		printf("rockchip debug: stop: change_transport_state \n\n");
 		change_transport_state(TRANSPORT_STOPPED);
 		break;
 
@@ -766,6 +775,7 @@ static void inform_play_transition_from_output(enum PlayFeedback fb) {
 	case PLAY_STOPPED:
 		replace_transport_uri_and_meta("", "");
 		replace_current_uri_and_meta("", "");
+		printf("rockchip debug: inform_play_transition_from_output: change_transport_state\n\n");
 		change_transport_state(TRANSPORT_STOPPED);
 		break;
 
@@ -784,6 +794,7 @@ static void inform_play_transition_from_output(enum PlayFeedback fb) {
 
 static int play(struct action_event *event)
 {
+	printf("rockchip debug: play main\n\n");
 	if (!has_instance_id(event)) {
 		return -1;
 	}
@@ -792,6 +803,7 @@ static int play(struct action_event *event)
 	service_lock();
 	switch (transport_state_) {
 	case TRANSPORT_PLAYING:
+		printf("rockchip debug: TRANSPORT_PLAYING\n\n");
 		// Nothing to change.
 		break;
 
@@ -805,10 +817,12 @@ static int play(struct action_event *event)
 		/* >>> fall through */
 
 	case TRANSPORT_PAUSED_PLAYBACK:
+		printf("rockchip debug: TRANSPORT_PAUSED_PLAYBACK\n\n");
 		if (output_play(&inform_play_transition_from_output)) {
 			upnp_set_error(event, 704, "Playing failed");
 			rc = -1;
 		} else {
+			printf("rockchip debug: play :TRANSPORT_PAUSED_PLAYBACK\n\n");
 			change_transport_state(TRANSPORT_PLAYING);
 			const char *av_uri = get_var(TRANSPORT_VAR_AV_URI);
 			const char *av_meta = get_var(TRANSPORT_VAR_AV_URI_META);
@@ -847,9 +861,11 @@ static int pause_stream(struct action_event *event)
 
 	case TRANSPORT_PLAYING:
 		if (output_pause()) {
+			printf("rockchip debug: upnp_set_error 'Pause failed'\n");
 			upnp_set_error(event, 704, "Pause failed");
 			rc = -1;
 		} else {
+			printf("rockchip debug: pause_stream :change_transport_state;\n");
 			change_transport_state(TRANSPORT_PAUSED_PLAYBACK);
 		}
 		break;
