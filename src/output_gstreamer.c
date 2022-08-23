@@ -206,9 +206,9 @@ static int output_gstreamer_seek(gint64 position_nanos) {
 			     GST_SEEK_FLAG_FLUSH,
 			     GST_SEEK_TYPE_SET, position_nanos,
 			     GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
-		return -1;
-	} else {
 		return 0;
+	} else {
+		return -1;
 	}
 }
 
