@@ -683,11 +683,12 @@ static void *thread_update_track_time(void *userdata) {
 	const gint64 one_sec_unit = 1000000000LL;
 	char tbuf[32];
 	gint64 last_duration = -1, last_position = -1;
+	gint64 duration, position;
+	int pos_result = 0;
 	for (;;) {
 		usleep(500000);  // 500ms
 		service_lock();
-		gint64 duration, position;
-		const int pos_result = output_get_position(&duration, &position);
+		pos_result = output_get_position(&duration, &position);
 		if (pos_result == 0) {
 			if (duration != last_duration) {
 				print_upnp_time(tbuf, sizeof(tbuf), duration);
